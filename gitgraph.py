@@ -1,137 +1,35 @@
 import os
-import sys
 import datetime
-import re
 
 import pygit2
 
 
-def stuff():
-    dirpath = os.getcwd()
+def days_range(start, end):
+    """Build a range of days from start to end."""
+    delta = end - start
+    a_day = datetime.timedelta(days=1)
 
-    try:
-        gitpath = pygit2.discover_repository(dirpath)
-    except KeyError:
-        return
+    for i in range(abs(delta.days)):
 
-    repo = pygit2.Repository(gitpath)
+        # We handle the case where the delta can be negative so we need to
+        # decrease days insted of increasing.
+        offset = i * a_day
+        val = start + offset if delta.days > 0 else start - offset
 
-    last = repo[repo.head.target]
-
-    dct = {}
-    nb_commits = 0
-    for commit in repo.walk(last.id, pygit2.GIT_SORT_TIME):
-        date = datetime.datetime.fromtimestamp(commit.commit_time)
-        delta = datetime.datetime.today() - date
-        daydelta = delta.days
-
-        if daydelta not in dct:
-            dct[daydelta] = 0
-        dct[delta.days] += 1
-
-        nb_commits += 1
-
-    days = []
-    for i in range(max(dct.keys())):
-        if i in dct:
-            days.append(dct[i])
-        else:
-            days.append(0)
-
-    width = len(days)
-
-    print(
-        '<?xml version="1.0" encoding="utf-8" ?>'
-        '<svg xmlns="http://www.w3.org/2000/svg" width="{}" height="100">'
-        '<title>test</title>'
-        '<rect width="{}" height="100" style="fill:rgb(240,240,240)" />'.format(
-            width, width
-        )
-    )
-
-    max_commits = max(dct.values())
-    coef = 100 / max_commits
-
-    for x, day in enumerate(reversed(days)):
-        print(
-            '<rect x="{}" y="{}" '
-            'width="1" height="{}" '
-            'style="fill:rgb(255,0,0)">'
-            '<title>{} commits</title>'
-            '</rect>'.format(
-                x * 1,
-                100 - (day * coef),
-                day * coef,
-                day
-            )
-        )
-
-    regex = re.compile('^refs/tags')
-    tags = filter(lambda r: regex.match(r), repo.listall_references())
-
-    for tag in tags:
-        commit = repo.lookup_reference(tag).get_object()
-
-        diff = datetime.datetime.today() - datetime.datetime.fromtimestamp(commit.commit_time)
-        pos = width - diff.days
-
-        print('<text x="{}" y="0" fill="black" '
-              'transform="rotate(90 {} 0)" font-family="Inconsolata" font-size="9">'
-              '{}'
-              '</text>'.format(
-            pos,
-            pos,
-            tag.split('/')[2]
-        ))
-
-    print('<text x="{}" y="{}" fill="black" font-family="Inconsolata" font-size="9">{} commits</text>'.format(
-        0, 10,
-        nb_commits
-    ))
-
-    print('</svg>')
-
-
-def activity_graph(repos):
-
-    dirpath = os.getcwd()
-    repo_paths = [os.path.join(dirpath, r) for r in repos]
-
-    nb_commits = 0
-
-    dct = {}
-    for path in repo_paths:
-        try:
-            gitpath = pygit2.discover_repository(path)
-        except KeyError:
-            continue
-
-        repo = pygit2.Repository(gitpath)
-        last = repo[repo.head.target]
-
-        for commit in repo.walk(last.id, pygit2.GIT_SORT_TIME):
-            date = datetime.datetime.fromtimestamp(commit.commit_time)
-            delta = datetime.datetime.today() - date
-            daydelta = delta.days
-
-            if daydelta not in dct:
-                dct[daydelta] = 0
-            dct[delta.days] += 1
-
-            nb_commits += 1
-
-    # Computing list of days
-    days = []
-    for i in range(max(dct.keys()) + 1):
-        if i in dct:
-            days.append(dct[i])
-        else:
-            days.append(0)
-
-    draw_activity(days)
+        yield val
 
 
 def compute_color(nb, m):
+    """Compute the color of a cell.
+
+    Args:
+        nb: number of commits
+        m: maximum number of commits
+
+    Returns:
+        string containing color code in HTML format, eg. "#1e6823"
+
+    """
 
     if m > 0:
         ratio = nb / m
@@ -152,9 +50,66 @@ def compute_color(nb, m):
     return '#{}'.format(color)
 
 
+def retrieve_repo_activity(repo):
+
+    # Retrieve last commit from repo as start point for walk
+    last = repo[repo.head.target]
+
+    # Initialize data we are going to return
+    nb_commits = 0
+    per_day_commits = {}
+
+    # Walks though all the repository's commits by time
+
+    # TODO: this is time-dependant depending on current time ; maybe do not use
+    # datetime anymore but just date instead since we don't care about time of
+    # commit and current time of the day.
+    previous_date = None
+    for commit in repo.walk(last.id, pygit2.GIT_SORT_TIME):
+        date = datetime.datetime.fromtimestamp(commit.commit_time)
+        delta = datetime.datetime.today() - date
+
+        if delta.days not in per_day_commits:
+            per_day_commits[delta.days] = {
+                'date': date,
+                'commits': 0
+            }
+
+        per_day_commits[delta.days]['commits'] += 1
+        nb_commits += 1
+        previous_date = date
+
+    # We retrieve first and last commit date
+    first = previous_date
+    last = datetime.datetime.today()
+
+    # We generate a list of all days since first commit and fill it with
+    # retrieved data.
+    continuous_days_commits = []
+
+    for day in days_range(first, last):
+        delta = (last - day).days
+
+        if delta in per_day_commits:
+            commits = per_day_commits[delta]['commits']
+        else:
+            commits = 0
+
+        continuous_days_commits.append({
+            'date': day,
+            'commits': commits
+        })
+
+    return {
+        'per_day_commits': per_day_commits,
+        'continuous_days_commits': reversed(continuous_days_commits),
+        'nb_commits': nb_commits
+    }
+
+
 def draw_activity(days):
 
-    weeks = 10
+    weeks = 24
     days = list(reversed(days))[-(weeks*7):]
 
     box_height = 10
@@ -176,13 +131,18 @@ def draw_activity(days):
         x = int(n / vertical_boxes) * (10 + spacing)
         y = (n % vertical_boxes) * (10 + spacing)
 
+        date = datetime.datetime.now() - datetime.timedelta(days=len(days)-n-1)
+
         print(
-            '<g><rect x="{}" y="{}" width="10" height="10" style="fill:{};{}" /><title>{} {}</title></g>'
+            '<g>'
+            '<rect x="{}" y="{}" width="10" height="10" style="fill:{};{}" />'
+            '<title>{} {}</title>'
+            '</g>'
             .format(
                 x, y,
                 compute_color(day, max_commits),
                 "stroke-width:1px;stroke:red" if n == len(days) - 1 else "",
-                datetime.datetime.now() - datetime.timedelta(days=len(days)-(n+1)),
+                date,
                 '{} commits'.format(day)
             )
         )
@@ -191,4 +151,19 @@ def draw_activity(days):
 
 
 if __name__ == "__main__":
-    activity_graph(sys.argv[1:])
+
+    path = os.getcwd()
+
+    try:
+        gitpath = pygit2.discover_repository(path)
+    except KeyError:
+        pass
+
+    repo = pygit2.Repository(gitpath)
+
+    data = retrieve_repo_activity(repo)['continuous_days_commits']
+
+    # for k in data:
+    #     print(k['date'], k['commits'])
+
+    draw_activity([day['commits'] for day in data])
