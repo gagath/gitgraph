@@ -18,6 +18,7 @@ def stuff():
     last = repo[repo.head.target]
 
     dct = {}
+    nb_commits = 0
     for commit in repo.walk(last.id, pygit2.GIT_SORT_TIME):
         date = datetime.datetime.fromtimestamp(commit.commit_time)
         delta = datetime.datetime.today() - date
@@ -26,6 +27,8 @@ def stuff():
         if daydelta not in dct:
             dct[daydelta] = 0
         dct[delta.days] += 1
+
+        nb_commits += 1
 
     days = []
     for i in range(max(dct.keys())):
@@ -79,6 +82,11 @@ def stuff():
             pos,
             tag.split('/')[2]
         ))
+
+    print('<text x="{}" y="{}" fill="black" font-family="Inconsolata" font-size="9">{} commits</text>'.format(
+        0, 10,
+        nb_commits
+    ))
 
     print('</svg>')
 
