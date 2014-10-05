@@ -132,7 +132,11 @@ def activity_graph(repos):
 
 
 def compute_color(nb, m):
-    ratio = nb / m
+
+    if m > 0:
+        ratio = nb / m
+    else:
+        ratio = 0
 
     if ratio > 0.75:
         color = '1e6823'
@@ -149,6 +153,10 @@ def compute_color(nb, m):
 
 
 def draw_activity(days):
+
+    weeks = 10
+    days = list(reversed(days))[-(weeks*7):]
+
     box_height = 10
     box_width = 10
     max_commits = max(days)
@@ -164,15 +172,16 @@ def draw_activity(days):
         '<title>test</title>'.format(width, height)
     )
 
-    for n, day in enumerate(reversed(days)):
+    for n, day in enumerate(days):
         x = int(n / vertical_boxes) * (10 + spacing)
         y = (n % vertical_boxes) * (10 + spacing)
 
         print(
-            '<g><rect x="{}" y="{}" width="10" height="10" style="fill:{}" /><title>{} {}</title></g>'
+            '<g><rect x="{}" y="{}" width="10" height="10" style="fill:{};{}" /><title>{} {}</title></g>'
             .format(
                 x, y,
                 compute_color(day, max_commits),
+                "stroke-width:1px;stroke:red" if n == len(days) - 1 else "",
                 datetime.datetime.now() - datetime.timedelta(days=len(days)-(n+1)),
                 '{} commits'.format(day)
             )
