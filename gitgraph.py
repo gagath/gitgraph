@@ -87,6 +87,8 @@ def retrieve_repo_activity(repo):
     # retrieved data.
     continuous_days_commits = []
 
+    # TODO: We stop a day before today but in the graph we mark the last day as
+    # today; which is wrong.
     for day in days_range(first, last):
         delta = (last - day).days
 
