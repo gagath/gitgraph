@@ -57,6 +57,15 @@ def compute_color(nb, m):
 
 
 def retrieve_repo_activity(repo):
+    """Extract some relevant information from a git repository.
+
+    Args:
+        repo: an openned pygit2 repository instance
+
+    Returns:
+        A dictionnary with useful extracted metadata
+
+    """
 
     # Retrieve last commit from repo as start point for walk
     last = repo[repo.head.target]
@@ -112,6 +121,12 @@ def retrieve_repo_activity(repo):
 
 
 def draw_activity(days):
+    """Draw activity graph on stdout in SVG format.
+
+    Args:
+        days: list of days containing metadata like commits and real date
+
+    """
 
     weeks = 24
     days = list(reversed(days))[-(weeks*7):]
@@ -155,6 +170,7 @@ def draw_activity(days):
 
 
 def usage():
+    """Display an usage notice to the user."""
     print('usage: gitgraph.py DIRECTORY', file=sys.stderr)
 
 
