@@ -7,13 +7,18 @@ import pygit2
 def days_range(start, end):
     """Build a range of days from start to end."""
     delta = end - start
+
+    # We start with a negative value so that the offset will be 0 at the first
+    # loop iteration.
+    offset = datetime.timedelta(days=-1)
     a_day = datetime.timedelta(days=1)
 
     for i in range(abs(delta.days)):
 
+        offset += a_day
+
         # We handle the case where the delta can be negative so we need to
         # decrease days insted of increasing.
-        offset = i * a_day
         val = start + offset if delta.days > 0 else start - offset
 
         yield val
@@ -89,8 +94,6 @@ def retrieve_repo_activity(repo):
     # retrieved data.
     continuous_days_commits = []
 
-    # TODO: We stop a day before today but in the graph we mark the last day as
-    # today; which is wrong.
     for day in days_range(first, last):
         delta = (last - day).days
 
@@ -166,8 +169,4 @@ if __name__ == "__main__":
     repo = pygit2.Repository(gitpath)
 
     data = retrieve_repo_activity(repo)['continuous_days_commits']
-
-    # for k in data:
-    #     print(k['date'], k['commits'])
-
     draw_activity([day for day in data])
