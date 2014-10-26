@@ -66,22 +66,24 @@ def retrieve_repo_activity(repo):
     # commit and current time of the day.
     previous_date = None
     for commit in repo.walk(last.id, pygit2.GIT_SORT_TIME):
-        date = datetime.datetime.fromtimestamp(commit.commit_time)
-        delta = datetime.datetime.today() - date
+        commit_date = datetime.datetime.fromtimestamp(commit.commit_time).date()
+        today_date = datetime.date.today()
+
+        delta = today_date - commit_date
 
         if delta.days not in per_day_commits:
             per_day_commits[delta.days] = {
-                'date': date,
+                'date': commit_date,
                 'commits': 0
             }
 
         per_day_commits[delta.days]['commits'] += 1
         nb_commits += 1
-        previous_date = date
+        previous_date = commit_date
 
     # We retrieve first and last commit date
     first = previous_date
-    last = datetime.datetime.today()
+    last = datetime.date.today()
 
     # We generate a list of all days since first commit and fill it with
     # retrieved data.
@@ -116,7 +118,7 @@ def draw_activity(days):
 
     box_height = 10
     box_width = 10
-    max_commits = max(days)
+    max_commits = max([d['commits'] for d in days])
     spacing = 3
     vertical_boxes = 7
 
@@ -133,7 +135,7 @@ def draw_activity(days):
         x = int(n / vertical_boxes) * (10 + spacing)
         y = (n % vertical_boxes) * (10 + spacing)
 
-        date = datetime.datetime.now() - datetime.timedelta(days=len(days)-n-1)
+        date = day['date']
 
         print(
             '<g>'
@@ -142,10 +144,10 @@ def draw_activity(days):
             '</g>'
             .format(
                 x, y,
-                compute_color(day, max_commits),
+                compute_color(day['commits'], max_commits),
                 "stroke-width:1px;stroke:red" if n == len(days) - 1 else "",
                 date,
-                '{} commits'.format(day)
+                '{} commits'.format(day['commits'])
             )
         )
 
@@ -168,4 +170,4 @@ if __name__ == "__main__":
     # for k in data:
     #     print(k['date'], k['commits'])
 
-    draw_activity([day['commits'] for day in data])
+    draw_activity([day for day in data])
