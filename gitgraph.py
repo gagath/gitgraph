@@ -13,7 +13,7 @@ def days_range(start, end):
     offset = datetime.timedelta(days=-1)
     a_day = datetime.timedelta(days=1)
 
-    for i in range(abs(delta.days)):
+    for _ in range(abs(delta.days) + 1):
 
         offset += a_day
 
@@ -65,10 +65,6 @@ def retrieve_repo_activity(repo):
     per_day_commits = {}
 
     # Walks though all the repository's commits by time
-
-    # TODO: this is time-dependant depending on current time ; maybe do not use
-    # datetime anymore but just date instead since we don't care about time of
-    # commit and current time of the day.
     previous_date = None
     for commit in repo.walk(last.id, pygit2.GIT_SORT_TIME):
         commit_date = datetime.datetime.fromtimestamp(commit.commit_time).date()
