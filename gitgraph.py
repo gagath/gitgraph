@@ -1,4 +1,5 @@
 import os
+import sys
 import datetime
 
 import pygit2
@@ -153,14 +154,24 @@ def draw_activity(days):
     print('</svg>')
 
 
+def usage():
+    print('usage: gitgraph.py DIRECTORY', file=sys.stderr)
+
+
 if __name__ == "__main__":
 
-    path = os.getcwd()
+    if len(sys.argv) != 2:
+        usage()
+        sys.exit(1)
+
+    path = sys.argv[1]
 
     try:
         gitpath = pygit2.discover_repository(path)
     except KeyError:
-        pass
+        msg = 'git repository not found in {}, aborting.'.format(path)
+        print(msg, file=sys.stderr)
+        sys.exit(1)
 
     repo = pygit2.Repository(gitpath)
 
