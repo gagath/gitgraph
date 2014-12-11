@@ -120,7 +120,7 @@ def retrieve_repo_activity(repo):
     }
 
 
-def draw_activity(days):
+def draw_activity(days, f=sys.stdout):
     """Draw activity graph on stdout in SVG format.
 
     Args:
@@ -143,7 +143,8 @@ def draw_activity(days):
     print(
         '<?xml version="1.0" encoding="utf-8" ?>'
         '<svg xmlns="http://www.w3.org/2000/svg" width="{}" height="{}">'
-        '<title>test</title>'.format(width, height)
+        '<title>test</title>'.format(width, height),
+        file=f
     )
 
     for n, day in enumerate(days):
@@ -163,7 +164,8 @@ def draw_activity(days):
                 "stroke-width:1px;stroke:red" if n == len(days) - 1 else "",
                 date,
                 '{} commits'.format(day['commits'])
-            )
+            ),
+            file=f
         )
 
     print('</svg>')
