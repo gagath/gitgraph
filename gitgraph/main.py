@@ -176,8 +176,7 @@ def usage():
     print('usage: gitgraph.py DIRECTORY', file=sys.stderr)
 
 
-if __name__ == "__main__":
-
+def run():
     if len(sys.argv) != 2:
         usage()
         sys.exit(1)
@@ -195,3 +194,7 @@ if __name__ == "__main__":
 
     data = retrieve_repo_activity(repo)['continuous_days_commits']
     draw_activity([day for day in data])
+
+
+if __name__ == "__main__":
+    run()

@@ -1,3 +1,5 @@
 venv
 *.swp
 .ropeproject
+build
+__pycache__

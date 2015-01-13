@@ -1,0 +1,6 @@
+#!/bin/python3
+
+from gitgraph import main
+
+if __name__ == "__main__":
+    main.run()
