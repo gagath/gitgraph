@@ -156,7 +156,7 @@ def draw_activity(days, f=sys.stdout):
         print(
             '<g>'
             '<rect x="{}" y="{}" width="10" height="10" style="fill:{};{}" />'
-            '<title>{} {}</title>'
+            '<title>{}\n{}</title>'
             '</g>'
             .format(
                 x, y,
