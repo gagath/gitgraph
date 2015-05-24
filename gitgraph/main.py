@@ -36,22 +36,27 @@ def compute_color(nb, m):
         string containing color code in HTML format, eg. "#1e6823"
 
     """
+    colors = {
+        '0.75' : '1e6823',
+        '0.50' : '44a340',
+        '0.25' : '8cc665',
+        '0.00'   : 'd6e685',
+    }
 
+    # Compute ratio
     if m > 0:
         ratio = nb / m
     else:
         ratio = 0
 
-    if ratio > 0.75:
-        color = '1e6823'
-    elif ratio > 0.5:
-        color = '44a340'
-    elif ratio > 0.25:
-        color = '8cc665'
-    elif ratio > 0:
-        color = 'd6e685'
-    else:
-        color = 'eee'
+    # Assign default color
+    color = 'eee'
+
+    # Select color based on intervals
+    for limit, col in colors.items():
+        if ratio > float(limit):
+            color = col
+            break
 
     return '#{}'.format(color)
 
@@ -121,20 +126,21 @@ def retrieve_repo_activity(repo):
 
 
 def draw_activity(days, f=sys.stdout):
-    """Draw activity graph on stdout in SVG format.
+    """Draw activity graph on file output in SVG format.
 
     Args:
         days: list of days containing metadata like commits and real date
+        f: file output, default is stdout
 
     """
 
     weeks = 24
     days = list(reversed(days))[-(weeks*7):]
 
-    box_height = 10
-    box_width = 10
+    box_height = 11
+    box_width = 11
     max_commits = max([d['commits'] for d in days])
-    spacing = 3
+    spacing = 2
     vertical_boxes = 7
 
     height = int(box_height * (vertical_boxes + spacing))
@@ -148,8 +154,8 @@ def draw_activity(days, f=sys.stdout):
     )
 
     for n, day in enumerate(days):
-        x = int(n / vertical_boxes) * (10 + spacing)
-        y = (n % vertical_boxes) * (10 + spacing)
+        x = int(n / vertical_boxes) * (box_width + spacing)
+        y = (n % vertical_boxes) * (box_height + spacing)
 
         date = day['date']
 
@@ -177,6 +183,7 @@ def usage():
 
 
 def run():
+    """Run the gitgraph main app."""
     if len(sys.argv) != 2:
         usage()
         sys.exit(1)
